@@ -25,6 +25,4 @@ WORKDIR C:/app/ComfyUI/custom_nodes
 RUN git clone https://github.com/ltdrdata/ComfyUI-Manager.git
 
 # Reset working directory to the ComfyUI root
-WORKDIR C:/app/ComfyUI
-
-# The container should use the same entrypoint/cmd as the base image
+WORKDIR C:/app

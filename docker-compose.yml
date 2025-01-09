@@ -1,9 +1,9 @@
 services:
   comfy:
+    build: .
     restart: always
     runtime: nvidia
     container_name: comfy
-    image: eisai/comfy-ui
     isolation: process
     ports:
       - "8188:8188"
