@@ -1,0 +1,22 @@
+networks:
+  comfy:
+
+services:
+  comfy:
+    runtime: nvidia
+    container_name: comfy
+    image: eisai/comfy-ui
+    isolation: process
+    networks:
+      - comfy
+    deploy:
+      resources:
+        limits:
+          cpus: "32"
+    ports:
+      - "8188:8188"
+    volumes:
+      - 'D:\comfy\models:C:\app\ComfyUI\models'
+      - 'D:\comfy\output:C:\app\ComfyUI\output'
+    devices:
+      - class/5B45201D-F2F2-4F3B-85BB-30FF1F953599
