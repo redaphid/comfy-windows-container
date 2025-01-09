@@ -1,18 +1,10 @@
-networks:
-  comfy:
-
 services:
   comfy:
+    restart: always
     runtime: nvidia
     container_name: comfy
     image: eisai/comfy-ui
     isolation: process
-    networks:
-      - comfy
-    deploy:
-      resources:
-        limits:
-          cpus: "32"
     ports:
       - "8188:8188"
     volumes:
