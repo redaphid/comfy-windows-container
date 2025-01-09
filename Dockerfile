@@ -19,10 +19,16 @@ RUN $env:PATH = $env:PATH + ';C:/app/MinGit/cmd'; \
     [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
 
 # Set working directory for node manager installation
-WORKDIR C:/app/ComfyUI/custom_nodes
+RUN mkdir C:/app/base_custom_nodes
+WORKDIR C:/app/base_custom_nodes
 
 # Clone the ComfyUI-Manager repository
 RUN git clone https://github.com/ltdrdata/ComfyUI-Manager.git
 
-# Reset working directory to the ComfyUI root
 WORKDIR C:/app
+
+# Copy extra_model_paths.yaml to ComfyUI directory
+COPY extra_model_paths.yaml C:/app/ComfyUI/
+
+# Reset working directory to the ComfyUI root
+
