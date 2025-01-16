@@ -5,14 +5,18 @@ services:
     runtime: nvidia
     container_name: comfy
     isolation: process
-    ports:
-      - "8188:8188"
+    networks:
+      - comfy-net
     volumes:
       - 'D:\comfy\models:C:\app\ComfyUI\models'
       - 'D:\comfy\output:C:\app\ComfyUI\output'
-      - custom_nodes:C:\app\ComfyUI\custom_nodes
+      - custom_nodes:C:\app\base_custom_nodes
     devices:
       - class/5B45201D-F2F2-4F3B-85BB-30FF1F953599
+
+networks:
+  comfy-net:
+    name: comfy-net
 
 volumes:
   custom_nodes:

@@ -1,21 +1,21 @@
-# Start from the eisai/comfy-ui Windows image
-FROM eisai/comfy-ui:latest
+# Use Windows Server Core with Python
+FROM python:3.12.8-windowsservercore-ltsc2022
+
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-
-# Set working directory
-WORKDIR C:/app
-
+# install gi
 # Install Chocolatey
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
     iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-
 # Install Git
 RUN choco install git -y --no-progress
 
-# Update PATH environment variable
-RUN $env:PATH = $env:PATH + ';C:/app/MinGit/cmd;C:/app/python_embeded;C:/app/python_embeded/Scripts'; \
-    [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
+# pip install comfy-cli
+RUN pip install comfy-cli
+RUN mkdir C:/app
+# Set working directory
+WORKDIR C:/app
+RUN comfy install
 
 # RUN update/update_comfyui.bat
 # RUN python -m pip install --upgrade pip-system-certs
