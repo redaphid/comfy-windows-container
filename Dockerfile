@@ -10,6 +10,9 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
 RUN choco install git -y --no-progress; \
     choco install vcredist140 -y --no-progress
 
+# Install FFmpeg (needed for av library)
+RUN choco install ffmpeg -y --no-progress
+
 # pip install comfy-cli with verbose output
 RUN python -m pip install --upgrade pip-system-certs
 RUN python -m pip install comfy-cli

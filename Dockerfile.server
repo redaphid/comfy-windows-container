@@ -1,0 +1,25 @@
+# Use an official Windows Python runtime as a parent image
+FROM python:3.12.8-windowsservercore-ltsc2022
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file into the container
+COPY requirements_server.txt .
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements_server.txt
+
+# Copy the image server script into the container
+COPY image_server.py .
+
+# Define the mount point for the shared volume
+# (This directory will be created if it doesn't exist)
+VOLUME /images
+
+# Make port 5000 available to the world outside this container
+EXPOSE 5000
+
+# Run image_server.py when the container launches
+# Point it to the directory where the volume will be mounted
+CMD ["python", "image_server.py", "--dir", "/images", "--port", "5000"]

@@ -1,6 +1,8 @@
 services:
   comfy:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: always
     ports:
       - 9778:8188
@@ -11,10 +13,38 @@ services:
       - comfy-net
     volumes:
       - 'D:\comfy\models:C:\app\ComfyUI\models'
-      - 'D:\comfy\output:C:\app\ComfyUI\output'
+      - comfy_output:C:\app\ComfyUI\output
       - custom_nodes:C:\app\custom_nodes
     devices:
       - class/5B45201D-F2F2-4F3B-85BB-30FF1F953599
+
+  image_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    restart: always
+    ports:
+      - "9779:5000"
+    volumes:
+      - comfy_output:/images
+    networks:
+      - comfy-net
+    depends_on:
+      - comfy
+
+  cloudflared:
+    build:
+      context: .
+      dockerfile: Dockerfile.cloudflared
+    restart: always
+    networks:
+      - comfy-net
+    environment:
+      # This token will be read from the .env file
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - comfy
+      - image_server # Wait for both services to be available
 
 networks:
   comfy-net:
@@ -22,4 +52,5 @@ networks:
     external: true
 
 volumes:
-  custom_nodes:
+  custom_nodes: {}
+  comfy_output: {}

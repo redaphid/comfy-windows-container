@@ -1,0 +1,18 @@
+# Use a minimal Windows base image
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+
+# Set required environment variables
+ENV CLOUDFLARED_VERSION=2024.6.1 \
+    DOWNLOAD_URL=https://github.com/cloudflare/cloudflared/releases/download/
+
+# Download cloudflared.exe
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+RUN Invoke-WebRequest -Uri "${env:DOWNLOAD_URL}/${env:CLOUDFLARED_VERSION}/cloudflared-windows-amd64.exe" -OutFile "C:\cloudflared.exe"
+
+# Check if the download was successful (optional but recommended)
+RUN if (-not (Test-Path C:\cloudflared.exe)) { throw 'cloudflared.exe download failed' }
+
+# Entrypoint to run the tunnel
+# Expects the TUNNEL_TOKEN environment variable to be set
+ENTRYPOINT ["C:\\cloudflared.exe", "tunnel", "--no-autoupdate", "run", "--token"]
+# CMD will be appended to ENTRYPOINT, so the token from the environment variable will be passed here.
