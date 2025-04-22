@@ -1,38 +1,33 @@
 # Use Windows Server Core with Python
 FROM python:3.12.8-windowsservercore-ltsc2022
 
-SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-# install gi
 # Install Chocolatey
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
     iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-# Install Git
-RUN choco install git -y --no-progress
 
-# pip install comfy-cli
-RUN pip install comfy-cli
-RUN mkdir C:/app
-# Set working directory
-WORKDIR C:/app
-RUN comfy install
+# Install Git and Visual C++ Redistributable
+RUN choco install git -y --no-progress; \
+    choco install vcredist140 -y --no-progress
 
-# RUN update/update_comfyui.bat
-# RUN python -m pip install --upgrade pip-system-certs
-# Set working directory for node manager installation
-RUN mkdir C:/app/base_custom_nodes
-WORKDIR C:/app/base_custom_nodes
-
-# Clone the ComfyUI-Manager repository
-RUN git clone https://github.com/ltdrdata/ComfyUI-Manager.git
-# copy config.ini here
-COPY config.ini C:/app/base_custom_nodes/ComfyUI-Manager/
-
-
+# pip install comfy-cli with verbose output
+RUN python -m pip install --upgrade pip-system-certs
+RUN python -m pip install comfy-cli
+# Create and set working directory
+RUN mkdir -p C:/app
 WORKDIR C:/app
 
-# Copy extra_model_paths.yaml to ComfyUI directory
-COPY extra_model_paths.yaml C:/app/ComfyUI/
+RUN comfy --skip-prompt --here install --nvidia --fast-deps
+WORKDIR C:/app/ComfyUI
+# Copy configuration files
+COPY config.ini C:/app/ComfyUI/custom_nodes/ComfyUI-Manager/
+COPY extra_model_paths.yaml .
+# Update ComfyUI
+RUN comfy --here update
 
-# Reset working directory to the ComfyUI root
+# Copy the watchdog script
+COPY watch-and-restart.ps1 /app/
 
+# Set the entrypoint to run the watchdog script
+# The script will start ComfyUI and monitor it
+ENTRYPOINT ["powershell", "-File", "C:/app/watch-and-restart.ps1"]
