@@ -30,17 +30,23 @@ while ($true) {
       # }
   }
 
-  # Use absolute path for the log file
-  $logPath = "C:/app/ComfyUI/output.log"
-  if (Test-Path $logPath) {
-    $log = Get-Content $logPath -Tail 100
-    if ($log -match "HTTP Request") {
-      Write-Host "Activity detected at $(Get-Date)"
+  # --- Watchdog Log Check ---
+  # Monitor the stdout log we are redirecting
+  $logPathToCheck = $comfyStdOutPath
+  $activityPattern = "(GET|POST) /" # Look for GET or POST requests in stdout
+
+  if (Test-Path $logPathToCheck) {
+    # Get the last N lines (adjust N if needed)
+    $logContent = Get-Content $logPathToCheck -Tail 50 -ErrorAction SilentlyContinue
+    if ($logContent -match $activityPattern) {
+      Write-Host "Activity pattern '$activityPattern' detected in $logPathToCheck at $(Get-Date)"
       $lastHit = Get-Date
     }
   } else {
-    Write-Host "Log file not found: $logPath"
+    # This might happen briefly at the start
+    Write-Host "Watchdog log file not found yet: $logPathToCheck"
   }
+  # --- End Watchdog Log Check ---
 
 
   $idleTime = (Get-Date) - $lastHit

@@ -24,6 +24,8 @@ COPY config.ini C:/app/ComfyUI/custom_nodes/ComfyUI-Manager/
 COPY extra_model_paths.yaml .
 # Update ComfyUI
 RUN comfy --here update
+# Install dependencies
+RUN python -m pip install -r requirements.txt
 
 # Copy the watchdog script
 COPY watch-and-restart.ps1 /app/
