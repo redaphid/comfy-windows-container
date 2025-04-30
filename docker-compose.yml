@@ -42,7 +42,8 @@ services:
       # This token will be read from the .env file
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
-      - comfy
+      comfy:
+        condition: service_healthy # Start/restart only when comfy is healthy
 volumes:
   custom_nodes: {}
   comfy_output: {}

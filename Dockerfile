@@ -33,6 +33,10 @@ RUN python -m pip install -r requirements.txt
 # Copy the watchdog script
 COPY watch-and-restart.ps1 /app/
 
+# Healthcheck to see if ComfyUI is responding
+HEALTHCHECK --interval=10s --timeout=30s --start-period=2m --retries=3 \
+  CMD powershell -Command "if (Test-NetConnection -ComputerName localhost -Port 8188 -InformationLevel Quiet) { exit 0 } else { exit 1 }"
+
 # Set the entrypoint to run the watchdog script
 # The script will start ComfyUI and monitor it
 ENTRYPOINT ["powershell", "-File", "C:/app/watch-and-restart.ps1"]

@@ -17,4 +17,4 @@ RUN if (-not (Test-Path C:\cloudflared.exe)) { throw 'cloudflared.exe download f
 
 # Entrypoint to run the tunnel
 # Expects the TUNNEL_TOKEN environment variable to be set
-ENTRYPOINT ["C:\\cloudflared.exe", "tunnel", "run", "SIBI_VISION"]
+ENTRYPOINT ["C:\\cloudflared.exe", "tunnel", "--retries", "0", "run", "SIBI_VISION"]

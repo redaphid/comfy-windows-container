@@ -1,24 +1,29 @@
 Write-Host "Starting ComfyUI process..."
-Start-Process -FilePath comfy -ArgumentList "--here", "launch", "--", "--listen"-WorkingDirectory "C:/app/ComfyUI" -RedirectStandardOutput "C:/app/ComfyUI/comfy_stdout.log" -RedirectStandardError "C:/app/ComfyUI/comfy_stderr.log"
-
-Write-Host "Waiting a few seconds for ComfyUI to initialize..."
-Start-Sleep -Seconds 10 # Give it time to start and potentially write logs/errors
+Start-Process -FilePath comfy -ArgumentList "--here", "launch", "--", "--listen" -WorkingDirectory "C:/app/ComfyUI" -RedirectStandardOutput "C:/app/ComfyUI/comfy_stdout.log" -RedirectStandardError "C:/app/ComfyUI/comfy_stderr.log"
 
 # --- Log File Paths ---
 $comfyStdOutPath = "C:/app/ComfyUI/comfy_stdout.log"
 $comfyStdErrPath = "C:/app/ComfyUI/comfy_stderr.log"
-$idleThresholdMinutes = 240
+$idleThresholdMinutes = 60
 
 while ($true) {
-  Start-Sleep -Seconds 999
+  Start-Sleep -Seconds 120
 
   # --- Optional: Display recent logs ---
   if (Test-Path $comfyStdErrPath) {
       $errorContent = Get-Content $comfyStdErrPath -Tail 10 -ErrorAction SilentlyContinue # Show recent errors
       if ($errorContent) {
-          Write-Host "--- Recent ComfyUI Stderr ---"
+          Write-Host "--- Recent ComfyUI Stderr $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') ---"
           Write-Host ($errorContent -join "`n")
-          Write-Host "--------------------------"
+          Write-Host "---------------------------------------------------"
+      }
+  }
+  if (Test-Path $comfyStdOutPath) {
+      $outputContent = Get-Content $comfyStdOutPath -Tail 10 -ErrorAction SilentlyContinue # Show recent output
+      if ($outputContent) {
+          Write-Host "--- Recent ComfyUI Stdout $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') ---"
+          Write-Host ($outputContent -join "`n")
+          Write-Host "----------------------------------------------------"
       }
   }
   # You could add a similar block for stdout if needed for debugging
@@ -28,7 +33,12 @@ while ($true) {
     try {
       $logFile = Get-Item $comfyStdOutPath -ErrorAction Stop
       $timeSinceLastWrite = (Get-Date) - $logFile.LastWriteTime
-      Write-Host "Log file '$($logFile.Name)' last written $($timeSinceLastWrite.TotalMinutes.ToString("F2")) minutes ago."
+      Write-Host "-------------------------- Debug Info --------------------------"
+      Write-Host "Current Time:          $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+      Write-Host "Log Last Write Time:   $($logFile.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))"
+      Write-Host "Calculated Idle Time:  $($timeSinceLastWrite.TotalMinutes.ToString("F2")) minutes"
+      Write-Host "Idle Threshold:        $idleThresholdMinutes minutes"
+      Write-Host "----------------------------------------------------------------"
 
       if ($timeSinceLastWrite.TotalMinutes -gt $idleThresholdMinutes) {
         Write-Host "Idle threshold ($idleThresholdMinutes minutes) exceeded based on log file modification time. Stopping process..."
