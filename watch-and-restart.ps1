@@ -4,58 +4,47 @@ Start-Process -FilePath comfy -ArgumentList "--here", "launch", "--", "--listen"
 Write-Host "Waiting a few seconds for ComfyUI to initialize..."
 Start-Sleep -Seconds 10 # Give it time to start and potentially write logs/errors
 
-$lastHit = Get-Date
+# --- Log File Paths ---
+$comfyStdOutPath = "C:/app/ComfyUI/comfy_stdout.log"
+$comfyStdErrPath = "C:/app/ComfyUI/comfy_stderr.log"
+$idleThresholdMinutes = 240
 
 while ($true) {
-  Start-Sleep -Seconds 60
+  Start-Sleep -Seconds 999
 
-  # Check for ComfyUI's own logs (if they exist)
-  $comfyStdOutPath = "C:/app/ComfyUI/comfy_stdout.log"
-  $comfyStdErrPath = "C:/app/ComfyUI/comfy_stderr.log"
+  # --- Optional: Display recent logs ---
   if (Test-Path $comfyStdErrPath) {
-      $errorContent = Get-Content $comfyStdErrPath -Raw -ErrorAction SilentlyContinue
+      $errorContent = Get-Content $comfyStdErrPath -Tail 10 -ErrorAction SilentlyContinue # Show recent errors
       if ($errorContent) {
-          Write-Host "--- ComfyUI Stderr ---"
-          Write-Host $errorContent
-          Write-Host "---------------------"
+          Write-Host "--- Recent ComfyUI Stderr ---"
+          Write-Host ($errorContent -join "`n")
+          Write-Host "--------------------------"
       }
   }
+  # You could add a similar block for stdout if needed for debugging
+
+  # --- Idle Check based on Log File Modification Time ---
   if (Test-Path $comfyStdOutPath) {
-      $outputContent = Get-Content $comfyStdOutPath -Raw -ErrorAction SilentlyContinue
-      # Optional: You might want to print stdout too for debugging, but it could be verbose
-      # if ($outputContent) {
-      #     Write-Host "--- ComfyUI Stdout ---"
-      #     Write-Host $outputContent
-      #     Write-Host "---------------------"
-      # }
-  }
+    try {
+      $logFile = Get-Item $comfyStdOutPath -ErrorAction Stop
+      $timeSinceLastWrite = (Get-Date) - $logFile.LastWriteTime
+      Write-Host "Log file '$($logFile.Name)' last written $($timeSinceLastWrite.TotalMinutes.ToString("F2")) minutes ago."
 
-  # --- Watchdog Log Check ---
-  # Monitor the stdout log we are redirecting
-  $logPathToCheck = $comfyStdOutPath
-  $activityPattern = "(GET|POST) /" # Look for GET or POST requests in stdout
-
-  if (Test-Path $logPathToCheck) {
-    # Get the last N lines (adjust N if needed)
-    $logContent = Get-Content $logPathToCheck -Tail 50 -ErrorAction SilentlyContinue
-    if ($logContent -match $activityPattern) {
-      Write-Host "Activity pattern '$activityPattern' detected in $logPathToCheck at $(Get-Date)"
-      $lastHit = Get-Date
+      if ($timeSinceLastWrite.TotalMinutes -gt $idleThresholdMinutes) {
+        Write-Host "Idle threshold ($idleThresholdMinutes minutes) exceeded based on log file modification time. Stopping process..."
+        Stop-Process -Name comfy -Force -ErrorAction SilentlyContinue
+        Write-Host "Exiting script."
+        exit 0 # Exit the script
+      }
+    } catch {
+        Write-Warning "Error accessing log file '$comfyStdOutPath': $($_.Exception.Message)"
+        # Decide how to handle this - maybe continue, maybe exit after a few tries? For now, continue.
     }
   } else {
-    # This might happen briefly at the start
-    Write-Host "Watchdog log file not found yet: $logPathToCheck"
+    # Log file doesn't exist yet. This might be okay initially.
+    # Consider adding logic here if the log file *should* exist after a certain startup period.
+    Write-Host "Watchdog log file not found yet: $comfyStdOutPath. Process might still be starting."
   }
-  # --- End Watchdog Log Check ---
+  # --- End Idle Check ---
 
-
-  $idleTime = (Get-Date) - $lastHit
-  Write-Host "Current idle time: $($idleTime.TotalMinutes) minutes"
-
-  if ($idleTime.TotalMinutes -gt 10) {
-    Write-Host "Idle threshold exceeded. Stopping process..."
-    Stop-Process -Name comfy -Force -ErrorAction SilentlyContinue
-    Write-Host "Exiting script."
-    exit 0 # Exit the script, which should stop the container if this is the main process
-  }
 }

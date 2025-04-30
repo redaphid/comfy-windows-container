@@ -1,18 +1,20 @@
 # Use a minimal Windows base image
-FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
-
-# Set required environment variables
-ENV CLOUDFLARED_VERSION=2024.6.1 \
-    DOWNLOAD_URL=https://github.com/cloudflare/cloudflared/releases/download/
-
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
 # Download cloudflared.exe
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-RUN Invoke-WebRequest -Uri "${env:DOWNLOAD_URL}/${env:CLOUDFLARED_VERSION}/cloudflared-windows-amd64.exe" -OutFile "C:\cloudflared.exe"
+
+# Disable DNS Cache (helps with service discovery in Windows containers)
+RUN Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' -Name ServerPriorityTimeLimit -Value 0 -Type DWord
+
+# Download curl (using a potentially more stable URL)
+# RUN Invoke-WebRequest -Uri "https://curl.se/windows/latest.zip" -OutFile "C:\curl-latest.zip"; Expand-Archive -Path C:\curl-latest.zip -DestinationPath C:\curl-latest; Copy-Item -Path (Get-ChildItem -Path C:\curl-latest\curl-*-windows-x86_64-mingw\bin\curl.exe).FullName -Destination C:\curl.exe; Remove-Item -Path C:\curl-latest.zip; Remove-Item -Path C:\curl-latest -Recurse
+
+RUN Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile "C:\cloudflared.exe"
 
 # Check if the download was successful (optional but recommended)
 RUN if (-not (Test-Path C:\cloudflared.exe)) { throw 'cloudflared.exe download failed' }
+# RUN if (-not (Test-Path C:\curl.exe)) { throw 'curl.exe download failed' } # Check curl download
 
 # Entrypoint to run the tunnel
 # Expects the TUNNEL_TOKEN environment variable to be set
-ENTRYPOINT ["C:\\cloudflared.exe", "tunnel", "--no-autoupdate", "run", "--token"]
-# CMD will be appended to ENTRYPOINT, so the token from the environment variable will be passed here.
+ENTRYPOINT ["C:\\cloudflared.exe", "tunnel", "run", "SIBI_VISION"]
