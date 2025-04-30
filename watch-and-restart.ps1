@@ -4,7 +4,7 @@ Start-Process -FilePath comfy -ArgumentList "--here", "launch", "--", "--listen"
 # --- Log File Paths ---
 $comfyStdOutPath = "C:/app/ComfyUI/comfy_stdout.log"
 $comfyStdErrPath = "C:/app/ComfyUI/comfy_stderr.log"
-$idleThresholdMinutes = 60
+$idleThresholdMinutes = 120
 
 while ($true) {
   Start-Sleep -Seconds 120
